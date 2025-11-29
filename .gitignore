@@ -1,5 +1,5 @@
 # 忽略数据目录
-data/
+# data/
 
 # 忽略.trae目录
 .trae/
