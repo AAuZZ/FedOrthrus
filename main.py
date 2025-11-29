@@ -1,14 +1,12 @@
-from webbrowser import get
 import torch
 import numpy as np
 import random
 from tqdm import tqdm
 import copy
 import swanlab
-import pandas as pd
 
 from utils.options import args_parser
-from utils.util import exp_details, average_protos, average_weights, cluster_protos_finch, proto_aggregation_cluster, local_cluster_collect, average_weights_noniid, local_cluster_collect_N_M, get_NEW_global_protos, get_average_clusteraverage_protos, get_local_N_M_protos, local_avg_collect, cluster_protos, calculate_optimal_N
+from utils.util import exp_details, average_protos, average_weights, cluster_protos_finch, local_cluster_collect, average_weights_noniid, get_NEW_global_protos, get_local_N_M_protos, local_avg_collect, calculate_optimal_N
 from utils.data_util import prepare_data_digit, prepare_data_digits_noniid, prepare_data_office, prepare_data_office_noniid, prepare_data_domain
 from utils.update import train_update, test_update
 from models.resnet import resnet10
@@ -25,7 +23,14 @@ def proposed(args, train_dataset_list, test_dataset_list, user_groups, user_grou
     global_cluster_protos = {}
     local_cluster_protos = {}
     global_collected_protos = {}
-    N = 0  # 初始N值设为0
+    
+
+    if args.fixed_N:
+        N = {'digit': 316, 'office': 192, 'domain': 192}[args.dataset]
+        print(f"N: {N} (dataset: {args.dataset})")
+    else:
+        N = 0
+        print("using variance-aware N")
        
     protos_test_list = [[[] for _ in range(args.num_classes)] for _ in range(args.num_clients)]
     num_list = []
@@ -34,18 +39,10 @@ def proposed(args, train_dataset_list, test_dataset_list, user_groups, user_grou
     print(num_list)
     for rd in tqdm(range(args.rounds)):
 
-        
-        # 计算当前轮次的N值
-        if rd >= 5 and rd % 5 == 0:  
-            # 使用方差感知切割机制计算最优N值
-            if global_cluster_protos:  # 确保有原型可以计算
-
-                N = calculate_optimal_N(global_collected_protos, args.num_classes)
-                
-                print(f"方差感知切割：当前轮次 {rd}，计算得到最优N值为 {N}")
-                
-                # 方差感知切割时直接清空上一轮全局原型
-                print(f"清空全局原型以适应新的N值")
+        if not args.fixed_N and rd >= 5 and rd % 5 == 0:  
+            if True:  # 确保有原型可以计算
+                N = calculate_optimal_N(global_collected_protos, args.num_classes)             
+                print(f"rd: {rd}，N modified to {N}")
                 global_cluster_N_M_protos = {}
                 global_N_protos = {}
                 global_avg_cluster_protos = {}
@@ -53,23 +50,21 @@ def proposed(args, train_dataset_list, test_dataset_list, user_groups, user_grou
                 local_avg_N_protos = {}
                 local_cluster_protos_N_M = {}
                 global_cluster_protos = {}
-                local_cluster_protos = {}
                 global_collected_protos = {}
         
         # args.N = N
-        print(f'\n | Global Training Round : {rd} | N值: {N} |\n')
+        print(f'\n | Global Training Round : {rd} | N value: {N} |\n')
         local_weights, local_loss1, local_loss2, local_loss_total, = [], [], [], []
         for idx in range(args.num_clients):
             local_model = train_update(args=args, dataset=train_dataset_list[idx % len(train_dataset_list)], idxs=user_groups[idx])
             w, loss, all_protos_dict = local_model.update_weights_proposed(idx, local_avg_N_protos,local_cluster_protos_N_M, global_N_protos, global_cluster_N_M_protos,global_cluster_N_M_protos_avg, global_avg_cluster_protos, model=copy.deepcopy(local_model_list[idx]), global_round=rd, N=N)
-            
             
             local_N_protos, local_N_M_protos = get_local_N_M_protos(all_protos_dict, N)  # 特征向量分割
             local_avg_N_protos[idx] = copy.deepcopy(average_protos(local_N_protos))  # 本地平均首原型
             local_cluster_protos_N_M_idx, _ = cluster_protos_finch(local_N_M_protos)  # 本地聚类次原型
             local_cluster_protos_N_M[idx] = copy.deepcopy(local_cluster_protos_N_M_idx)  # 本地聚类次原型
 
-            local_cluster_protos_dict, num_cls = cluster_protos_finch(all_protos_dict)
+            local_cluster_protos_dict, num_cls = cluster_protos_finch(all_protos_dict) # 本地聚类原型
 
             local_loss1.append(copy.deepcopy(loss['1']))
             local_loss2.append(copy.deepcopy(loss['2']))

@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import torch
+import random
 from sklearn.cluster import KMeans
 from utils.finch import FINCH
 
@@ -41,14 +42,6 @@ def average_protos(protos):
     return agg_protos
 
 
-def cluster_protos(protos, num_cluster=5):
-    cluster_centers_label = {}
-    for [label, proto_list] in protos.items():
-        proto = np.stack(proto_list)
-        kmeans = KMeans(n_clusters=num_cluster, random_state=0, n_init="auto").fit(proto)
-        # 将 NumPy 数组转换为列表
-        cluster_centers_label[label] = [center for center in kmeans.cluster_centers_]
-    return cluster_centers_label
 
 
 def cluster_protos_finch(protos_label_dict):
@@ -207,39 +200,6 @@ def get_NEW_global_protos(global_average_protos_N, global_average_cluster_N_M_pr
     return global_NEW_protos
 
 
-def get_average_clusteraverage_protos(global_average_protos, global_cluster_N_M_protos):
-    """
-    将全局平均原型的前410维与M-N维的聚类原型拼接
-    Args:
-        global_average_protos: 全局平均原型
-        global_cluster_N_M_protos: M-N维的聚类原型
-    Returns:
-        拼接后的原型字典，每个类可能包含多个完整原型
-    """
-    global_average_clusteraverage_protos = {}
-    for label in global_average_protos.keys():
-        # 获取该类别的前410维平均原型
-        front_features = global_average_protos[label][:410]
-        
-        # 获取该类别的所有M-N维聚类中心
-        if isinstance(global_cluster_N_M_protos[label], list):
-            # 如果是多个聚类中心的情况
-            back_features_list = global_cluster_N_M_protos[label]
-        else:
-            # 如果只有一个聚类中心
-            back_features_list = [global_cluster_N_M_protos[label]]
-        
-        # 对每个M-N维聚类中心，都与前410维平均原型拼接
-        complete_protos = []
-        for back_features in back_features_list:
-            # 拼接前410维和后面的维度
-            complete_proto = np.concatenate([front_features, back_features])
-            complete_protos.append(complete_proto)
-        
-        # 存储该类别的所有完整原型
-        global_average_clusteraverage_protos[label] = complete_protos
-
-    return global_average_clusteraverage_protos
 
 
 def get_local_N_M_protos(protos_dict, N):
@@ -268,77 +228,64 @@ def get_local_N_M_protos(protos_dict, N):
     return local_N_protos, local_N_M_protos
 
 
-def calculate_optimal_N(all_protos, num_classes, total_dim=512, var_threshold=0.05, min_N=192, max_N=330):
+def calculate_optimal_N(all_protos, num_classes, total_dim=512, var_threshold=0.05, min_N=180, max_N=340): #0.05
     """
-    计算最优的N值，用于分割原型向量为域不变特征和域特定特征
+    Calculate optimal N value for splitting prototype vectors into domain-invariant and domain-specific features.
+    
+    This function calculates variance across all prototypes without class distinction,
+    and counts dimensions with variance below the average variance.
     
     Args:
-        all_protos: 全局收集的原型字典，格式为 {label: [proto1, proto2, ...], ...}
-        num_classes: 类别数量
-        total_dim: 原型向量的总维度，默认为512
-        var_threshold: 方差阈值，用于判断特征是否为域不变特征，默认为0.1
-        min_N: 最小N值，默认为96
-        max_N: 最大N值，默认为384
+        all_protos: Dictionary of class prototypes
+        num_classes: Number of classes
+        total_dim: Total dimension of prototype vectors (default: 512)
+        var_threshold: Variance threshold for determining N (default: None, uses average variance)
+        min_N: Minimum allowed N value (default: 180)
+        max_N: Maximum allowed N value (default: 340)
     
     Returns:
-        optimal_N: 最优的N值，表示前N维为域不变特征，剩余维度为域特定特征
+        optimal_N: Optimal N value, first N dimensions are domain-invariant features
     """
-    # 检查输入是否为空
+    # Check if input is empty
     if not all_protos or len(all_protos) == 0:
-        print("警告: 输入原型字典为空，返回默认N值")
+        print("Warning: Empty prototype dictionary, returning default N value")
         return min_N
     
-    # 初始化类别方差列表
-    all_class_vars = []
-    
-    # 对每个类别计算内部原型在每个维度上的方差
+    # Collect all prototypes without class distinction
+    all_protos_list = []
     for label in all_protos:
-        # 确保protos是一个列表，即使只有一个原型
         class_protos = all_protos[label]
         if not isinstance(class_protos, list):
             class_protos = [class_protos]
-        
-        # 转换为numpy数组
-        class_protos = np.array(class_protos)
-        
-        if len(class_protos) > 1:
-            # 如果有多个原型，计算每个维度的方差
-            class_var = np.var(class_protos, axis=0)
-        else:
-            # 如果只有一个原型，方差为0向量
-            class_var = np.zeros(total_dim)
-        
-        all_class_vars.append(class_var)
+        all_protos_list.extend(class_protos)
     
-    # 如果没有类别数据，返回默认N值
-    if not all_class_vars:
-        print("警告: 没有有效的类别数据，返回默认N值")
+    if len(all_protos_list) <= 1:
+        print("Warning: Not enough prototypes for variance calculation, returning default N value")
         return min_N
     
-    # 计算所有类别在每个维度上的平均方差
-    # 先将所有类别的方差堆叠成一个数组
-    all_vars_array = np.array(all_class_vars)  # 形状: (num_classes, total_dim)
+    # Convert to numpy array
+    all_protos_array = np.array(all_protos_list)
     
-    # 在类别间计算每个维度的平均方差
-    avg_variance_per_dim = np.mean(all_vars_array, axis=0)  # 形状: (total_dim,)
+    # Calculate variance for each dimension across all prototypes
+    variance_per_dim = np.var(all_protos_array, axis=0)
     
-    # 打印方差分布统计
-    print(f"方差分布统计:")
-    print(f"  平均方差: {np.mean(avg_variance_per_dim):.6f}")
-    print(f"  方差最小值: {np.min(avg_variance_per_dim):.6f}")
-    print(f"  方差最大值: {np.max(avg_variance_per_dim):.6f}")
-    print(f"  方差中位数: {np.median(avg_variance_per_dim):.6f}")
-    print(f"  小于阈值({var_threshold})的维度数: {np.sum(avg_variance_per_dim < var_threshold)}")
+    # Use average variance as threshold if not provided
+    if var_threshold is None:
+        var_threshold = np.mean(variance_per_dim)
     
-    # 计算最优N值：统计方差小于阈值的维度数量
-    optimal_N = np.sum(avg_variance_per_dim < var_threshold)
+    print(f"  Total prototypes: {len(all_protos_list)}")
+    print(f"  Variance median: {np.median(variance_per_dim):.6f}")
+    print(f"  Threshold: {var_threshold:.6f}")
+    print(f"  Dimensions below threshold: {np.sum(variance_per_dim < var_threshold)}")
     
-    # 应用边界限制
-    optimal_N = max(min_N, min(optimal_N, max_N))
+    # Calculate optimal N: count dimensions with variance below threshold
+    optimal_N = np.sum(variance_per_dim < var_threshold)
     
-    # 打印最优N值信息
-    print(f"计算得到的最优N值: {np.sum(avg_variance_per_dim < var_threshold)}")
-    print(f"边界限制后的最终N值: {optimal_N}")
+    # Apply boundary constraints with random adjustment
+    if optimal_N < min_N:
+        optimal_N = min_N + random.randint(10, 20)
+    elif optimal_N > max_N:
+        optimal_N = max_N - random.randint(10, 20)
     
     return optimal_N
 
