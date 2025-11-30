@@ -22,15 +22,16 @@ def args_parser():
     parser.add_argument('--label_iid', type=bool, default=True, help='label IID')
     parser.add_argument('--beta', type=float, default=0.5, help="diri distribution parameter")
 
-    parser.add_argument('--dataset', type=str, default='office', help="digit,office,domain") 
-    parser.add_argument('--num_clients', type=int, default=4, help="number of clients: 5 for digit, 4 for office, 6 for domain")
-    parser.add_argument('--rounds', type=int, default=80, help="number of rounds of training: 50 for digit, 80 for office, 200 for domain")
-    parser.add_argument('--lamb', type=float, default=10, help="CE loss weight parameter: 50 for digit, 10 for office, 1 for domain")
-    parser.add_argument('--fixed_N', type=bool, default=False, help="N: The number of dimensions in the generalized portion (fix it for faster calculation).")
+    parser.add_argument('--dataset', type=str, default='digit', help="digit,office,domain") 
+    parser.add_argument('--num_clients', type=int, default=5, help="number of clients: 5 for digit, 4 for office, 6 for domain")
+    parser.add_argument('--rounds', type=int, default=50, help="number of rounds of training: 50 for digit, 80 for office, 200 for domain")
+    parser.add_argument('--lamb', type=float, default=50, help="CE loss weight parameter: 50 for digit, 10 for office, 1 for domain")
+    parser.add_argument('--fixed_N', type=bool, default=True, help="N: The number of dimensions in the generalized portion (fix it for faster calculation).")
     parser.add_argument('--num_classes', type=int, default=10, help="number of classes")
     parser.add_argument('--n_per_class', type=int, default=10, help="num of samples per class: 10 for digit and office, 30 for domain")
     parser.add_argument('--n_per_class_test', type=int, default=100, help="num of samples per class for testing")
-    
+
+
     parser.add_argument('--swanlab', type=bool, default=False, help="swanlab")
     parser.add_argument('--num_exps', type=int, default=5, help="number of experiments")
 

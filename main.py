@@ -13,24 +13,17 @@ from models.resnet import resnet10
 
 def proposed(args, train_dataset_list, test_dataset_list, user_groups, user_groups_test, local_model_list):
 
-
     global_cluster_N_M_protos={}
     local_cluster_protos_N_M={}
     local_avg_N_protos = {}
     global_N_protos = {}
     global_avg_cluster_protos={}
     global_cluster_N_M_protos_avg={}
-    global_cluster_protos = {}
     local_cluster_protos = {}
     global_collected_protos = {}
-    
-
+    N = 0
     if args.fixed_N:
         N = {'digit': 316, 'office': 192, 'domain': 192}[args.dataset]
-        print(f"N: {N} (dataset: {args.dataset})")
-    else:
-        N = 0
-        print("using variance-aware N")
        
     protos_test_list = [[[] for _ in range(args.num_classes)] for _ in range(args.num_clients)]
     num_list = []
@@ -38,38 +31,35 @@ def proposed(args, train_dataset_list, test_dataset_list, user_groups, user_grou
         num_list.append(len(user_groups[i]))
     print(num_list)
     for rd in tqdm(range(args.rounds)):
-
+        # variance-aware decomposition
         if not args.fixed_N and rd >= 5 and rd % 5 == 0:  
-            if True:  # 确保有原型可以计算
-                N = calculate_optimal_N(global_collected_protos, args.num_classes)             
-                print(f"rd: {rd}，N modified to {N}")
-                global_cluster_N_M_protos = {}
-                global_N_protos = {}
-                global_avg_cluster_protos = {}
-                global_cluster_N_M_protos_avg = {}
-                local_avg_N_protos = {}
-                local_cluster_protos_N_M = {}
-                global_cluster_protos = {}
-                global_collected_protos = {}
-        
-        # args.N = N
+            N = calculate_optimal_N(global_collected_protos, args.num_classes, dataset=args.dataset)             
+            print(f"rd: {rd}，N modified to {N}")
+            global_cluster_N_M_protos = {}
+            global_N_protos = {}
+            global_avg_cluster_protos = {}
+            global_cluster_N_M_protos_avg = {}
+            local_avg_N_protos = {}
+            local_cluster_protos_N_M = {}
+            global_collected_protos = {}
+
         print(f'\n | Global Training Round : {rd} | N value: {N} |\n')
         local_weights, local_loss1, local_loss2, local_loss_total, = [], [], [], []
         for idx in range(args.num_clients):
             local_model = train_update(args=args, dataset=train_dataset_list[idx % len(train_dataset_list)], idxs=user_groups[idx])
             w, loss, all_protos_dict = local_model.update_weights_proposed(idx, local_avg_N_protos,local_cluster_protos_N_M, global_N_protos, global_cluster_N_M_protos,global_cluster_N_M_protos_avg, global_avg_cluster_protos, model=copy.deepcopy(local_model_list[idx]), global_round=rd, N=N)
             
-            local_N_protos, local_N_M_protos = get_local_N_M_protos(all_protos_dict, N)  # 特征向量分割
-            local_avg_N_protos[idx] = copy.deepcopy(average_protos(local_N_protos))  # 本地平均首原型
-            local_cluster_protos_N_M_idx, _ = cluster_protos_finch(local_N_M_protos)  # 本地聚类次原型
-            local_cluster_protos_N_M[idx] = copy.deepcopy(local_cluster_protos_N_M_idx)  # 本地聚类次原型
-
-            local_cluster_protos_dict, num_cls = cluster_protos_finch(all_protos_dict) # 本地聚类原型
+            # local dual-prototypes
+            local_N_protos, local_N_M_protos = get_local_N_M_protos(all_protos_dict, N)  
+            local_avg_N_protos[idx] = copy.deepcopy(average_protos(local_N_protos))  
+            local_cluster_protos_N_M_idx, _ = cluster_protos_finch(local_N_M_protos)  
+            local_cluster_protos_N_M[idx] = copy.deepcopy(local_cluster_protos_N_M_idx)  
 
             local_loss1.append(copy.deepcopy(loss['1']))
             local_loss2.append(copy.deepcopy(loss['2']))
             local_loss_total.append(copy.deepcopy(loss['total']))
             local_weights.append(copy.deepcopy(w))
+            local_cluster_protos_dict, num_cls = cluster_protos_finch(all_protos_dict)
             local_cluster_protos[idx] = copy.deepcopy(local_cluster_protos_dict)
 
         if args.label_iid:
@@ -79,17 +69,16 @@ def proposed(args, train_dataset_list, test_dataset_list, user_groups, user_grou
         for idx in range(args.num_clients):
             local_model_list[idx].load_state_dict(local_weights_list[idx])
 
+        # local complete cluster prototypes (collected for N)
         global_collected_protos = local_cluster_collect(local_cluster_protos)
-        global_cluster_protos, num_cls = cluster_protos_finch(global_collected_protos)
 
-        # 本地双原型 收集
+        # global dual-prototypes
         global_collected_N_protos = local_avg_collect(local_avg_N_protos)
         global_collected_N_M_protos =  local_cluster_collect(local_cluster_protos_N_M)
-        global_N_protos = average_protos(global_collected_N_protos)  #  全局首原型 （平均）
-        global_cluster_N_M_protos, _ = cluster_protos_finch(global_collected_N_M_protos) # 全局聚类次原型 （多个）     
-        global_cluster_N_M_protos_avg = average_protos(global_cluster_N_M_protos)  # 全局聚类次原型 （平均）
-        global_avg_cluster_protos = get_NEW_global_protos(global_N_protos, global_cluster_N_M_protos)  #  全局原型
-
+        global_N_protos = average_protos(global_collected_N_protos)  
+        global_cluster_N_M_protos, _ = cluster_protos_finch(global_collected_N_M_protos)     
+        global_cluster_N_M_protos_avg = average_protos(global_cluster_N_M_protos) 
+        global_avg_cluster_protos = get_NEW_global_protos(global_N_protos, global_cluster_N_M_protos)  
 
         if rd % 10 == 0:
             with torch.no_grad():

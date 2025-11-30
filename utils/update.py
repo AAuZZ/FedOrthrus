@@ -103,7 +103,6 @@ class train_update(object):
         return loss.mean()
 
     def criterion_generalized(self, features, labels, protos_dict, N):
-        # N = self.args.N
         temperature = self.args.tau
         bs = features.shape[0]
         protos_list = []
@@ -128,7 +127,7 @@ class train_update(object):
             mask[i][np.where(protos_key_list == label)] = 1
             logits[i] = torch.cosine_similarity(features[i].unsqueeze(0)[:,:N], protos_list, dim=1)
         mask = torch.tensor(mask).to(self.device)
-        logits = logits.pow(0.25)
+        logits = logits.pow(0.25) # Scaling
         logits = logits / temperature
         exp_logits = torch.exp(logits)
         sum_exp_logits = exp_logits.sum(1, keepdim=True)

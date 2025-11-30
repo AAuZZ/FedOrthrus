@@ -41,9 +41,6 @@ def average_protos(protos):
 
     return agg_protos
 
-
-
-
 def cluster_protos_finch(protos_label_dict):
     agg_protos = {}
     num_p = 0
@@ -80,25 +77,6 @@ def local_cluster_collect(local_cluster_protos):
                 else:
                     global_collected_protos[label] = [cluster_protos_list[i]]
     return global_collected_protos
-
-
-def local_cluster_collect_N_M(local_cluster_protos):
-    global_collected_protos = {}
-    global_collected_protos_N = {}
-    global_collected_protos_M_N = {}
-    for [idx, cluster_protos_label] in local_cluster_protos.items():
-        for [label, cluster_protos_list] in cluster_protos_label.items():
-            for i in range(len(cluster_protos_list)):
-                if label in global_collected_protos.keys():
-                    global_collected_protos[label].append(cluster_protos_list[i])
-                    global_collected_protos_N[label].append(cluster_protos_list[i][:410])
-                    global_collected_protos_M_N[label].append(cluster_protos_list[i][410:])
-                else:
-                    global_collected_protos[label] = [cluster_protos_list[i]]
-                    global_collected_protos_N[label] = [cluster_protos_list[i][:410]]
-                    global_collected_protos_M_N[label] = [cluster_protos_list[i][410:]]
-
-    return  global_collected_protos_N, global_collected_protos_M_N
 
 
 def average_weights(w):
@@ -228,29 +206,14 @@ def get_local_N_M_protos(protos_dict, N):
     return local_N_protos, local_N_M_protos
 
 
-def calculate_optimal_N(all_protos, num_classes, total_dim=512, var_threshold=0.05, min_N=180, max_N=340): #0.05
-    """
-    Calculate optimal N value for splitting prototype vectors into domain-invariant and domain-specific features.
-    
-    This function calculates variance across all prototypes without class distinction,
-    and counts dimensions with variance below the average variance.
-    
-    Args:
-        all_protos: Dictionary of class prototypes
-        num_classes: Number of classes
-        total_dim: Total dimension of prototype vectors (default: 512)
-        var_threshold: Variance threshold for determining N (default: None, uses average variance)
-        min_N: Minimum allowed N value (default: 180)
-        max_N: Maximum allowed N value (default: 340)
-    
-    Returns:
-        optimal_N: Optimal N value, first N dimensions are domain-invariant features
-    """
-    # Check if input is empty
+def calculate_optimal_N(all_protos, num_classes, dataset, total_dim=512, var_threshold=None, min_N=180, max_N=340, plot_histogram=False): #0.05
+    # Set dataset-specific threshold if not provided
+    if var_threshold is None:
+        var_threshold = 0.55 if dataset.lower() == 'digit' else 0.03
+    print(f"var_threshold: {var_threshold}")
     if not all_protos or len(all_protos) == 0:
         print("Warning: Empty prototype dictionary, returning default N value")
         return min_N
-    
     # Collect all prototypes without class distinction
     all_protos_list = []
     for label in all_protos:
@@ -265,22 +228,10 @@ def calculate_optimal_N(all_protos, num_classes, total_dim=512, var_threshold=0.
     
     # Convert to numpy array
     all_protos_array = np.array(all_protos_list)
-    
     # Calculate variance for each dimension across all prototypes
     variance_per_dim = np.var(all_protos_array, axis=0)
-    
-    # Use average variance as threshold if not provided
-    if var_threshold is None:
-        var_threshold = np.mean(variance_per_dim)
-    
-    print(f"  Total prototypes: {len(all_protos_list)}")
-    print(f"  Variance median: {np.median(variance_per_dim):.6f}")
-    print(f"  Threshold: {var_threshold:.6f}")
-    print(f"  Dimensions below threshold: {np.sum(variance_per_dim < var_threshold)}")
-    
     # Calculate optimal N: count dimensions with variance below threshold
     optimal_N = np.sum(variance_per_dim < var_threshold)
-    
     # Apply boundary constraints with random adjustment
     if optimal_N < min_N:
         optimal_N = min_N + random.randint(10, 20)
@@ -288,8 +239,6 @@ def calculate_optimal_N(all_protos, num_classes, total_dim=512, var_threshold=0.
         optimal_N = max_N - random.randint(10, 20)
     
     return optimal_N
-
-
 
 def local_avg_collect(local_avg_protos):
     """
