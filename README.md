@@ -1,28 +1,33 @@
 # Two Heads Are Better Than One: Generalized Cross-Domain Federated Learning via Dual-Prototype
 
+## Project Overview
+
+FedOrthrus is a federated learning framework that addresses cross-domain challenges through dual-prototype architecture. It enables effective model training across different data distributions while maintaining privacy and reducing communication overhead.
 
 ## Project Structure
 
 ```
 FedOrthrus/
 ├── data/                 # Dataset directory
-│   └── digit/            # Digit datasets (MNIST, MNIST_M, SVHN, etc.)
-│       ├── MNIST/        # MNIST dataset
-│       ├── MNIST_M/      # MNIST-M dataset
-│       ├── SVHN/         # SVHN dataset
-│       ├── SynthDigits/  # SynthDigits dataset
-│       └── USPS/         # USPS dataset
+│   ├── digit/            # Digit datasets (MNIST, MNIST_M, SVHN, etc.)
+│   │   ├── MNIST/        # MNIST dataset
+│   │   ├── MNIST_M/      # MNIST-M dataset
+│   │   ├── SVHN/         # SVHN dataset
+│   │   ├── SynthDigits/  # SynthDigits dataset
+│   │   └── USPS/         # USPS dataset
+│   ├── office/           # Office datasets (amazon, caltech, dslr, webcam)
+│   └── domain/           # Domain adaptation datasets (download required)
 ├── models/               # Model definitions
 │   └── resnet.py         # ResNet10 model implementation
 ├── utils/                # Utility functions
-│   ├── options.py        # Command-line parameter configuration
+│   ├── options.py        # Command line arguments configuration
 │   ├── update.py         # Local training and testing implementation
-│   ├── util.py           # Prototype aggregation, clustering, and other utility functions
+│   ├── util.py           # Prototype aggregation, clustering and other utilities
 │   ├── data_util.py      # Data preparation and preprocessing
-│   ├── dataset.py        # Dataset processing tools
+│   ├── dataset.py        # Dataset processing utilities
 │   └── finch.py          # FINCH clustering algorithm implementation
-├── main.py               # Project main entry
-├── acc.npy               # Experiment results storage file
+├── main.py               # Main entry point of the project
+├── acc.npy               # Experimental results storage file
 └── LICENSE               # License file
 ```
 
@@ -31,16 +36,16 @@ FedOrthrus/
 ### Create Virtual Environment
 
 ```bash
-# Using conda to create virtual environment
+# Create virtual environment with conda
 conda create -n fedorthrus python=3.9 -y
 conda activate fedorthrus
 
-# Or using venv to create virtual environment
+# Or create virtual environment with venv
 python -m venv fedorthrus_venv
 # Activate on Windows
 fedorthrus_venv\Scripts\activate
 # Activate on Linux/Mac
-# source fedorthrus_venv/bin/activate
+source fedorthrus_venv/bin/activate
 ```
 
 ### Install Dependencies
@@ -49,50 +54,35 @@ fedorthrus_venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Datasets
+
+FedOrthrus has been evaluated on three datasets:
+
+### Digit
+Digit datasets (MNIST, MNIST-M, SVHN, SynthDigits, USPS) are included in the repository.
+
+### Office
+Office datasets (amazon, caltech, dslr, webcam) are included in the repository.
+
+### Domain
+For the domain adaptation datasets, please download from the following link:
+[Domain Adaptation Datasets](https://drive.google.com/file/d/1pj7pk73OYeGhYXp9Nptmpw8nSxUe4dEY/view?usp=sharing)
+
+After downloading, extract the contents to the `data/domain/` directory.
+
 ## Usage
 
-### Basic Running Command
+### Basic Running Commands
 
 ```bash
-python main.py --dataset digit --num_clients 5 --rounds 50 --N 316
-```
+# Run on digit dataset with 5 clients and 50 rounds
+python main.py --dataset digit --num_clients 5 --rounds 50 --lamb 50
 
-### Main Parameter Description
+# Run on office dataset with 4 clients and 80 rounds
+python main.py --dataset office --num_clients 4 --rounds 80 --lamb 10
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `--device` | str | cuda | Running device (cpu, cuda, or others) |
-| `--gpu` | int | 0 | GPU index |
-| `--seed` | int | 0 | Random seed |
-| `--dataset` | str | digit | Dataset type (digit, office, domain) |
-| `--num_clients` | int | 5 | Number of clients |
-| `--rounds` | int | 50 | Number of training rounds |
-| `--N` | int | 316 | Number of aggregation dimensions |
-| `--lr` | float | 0.01 | Learning rate |
-| `--local_bs` | int | 32 | Local batch size |
-| `--train_ep` | int | 2 | Number of local epochs |
-| `--lamb` | float | 50 | CE loss weight parameter |
-| `--tau` | float | 0.07 | Loss temperature |
-
-### Recommended Parameters for Different Datasets
-
-| Dataset | num_clients | rounds | N | lamb |
-|---------|-------------|--------|---|------|
-| digit | 5 | 50 | 316 | 50 |
-| office | 4 | 80 | 192 | 10 |
-| domain | 6 | 200 | 192 | 1 |
-
-### Running Examples
-
-```bash
-# Run on digit dataset, 5 clients, 50 rounds
-python main.py --dataset digit --num_clients 5 --rounds 50 --N 316 --lamb 50
-
-# Run on office dataset, 4 clients, 80 rounds
-python main.py --dataset office --num_clients 4 --rounds 80 --N 192 --lamb 10
-
-# Run on domain dataset, 6 clients, 200 rounds
-python main.py --dataset domain --num_clients 6 --rounds 200 --N 192 --lamb 1
+# Run on domain dataset with 6 clients and 200 rounds
+python main.py --dataset domain --num_clients 6 --rounds 200 --lamb 1 --n_per_class 30
 ```
 
 

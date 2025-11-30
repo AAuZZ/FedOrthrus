@@ -7,12 +7,14 @@
 ```
 FedOrthrus/
 ├── data/                 # 数据集目录
-│   └── digit/            # 数字数据集（MNIST、MNIST_M、SVHN等）
-│       ├── MNIST/        # MNIST数据集
-│       ├── MNIST_M/      # MNIST-M数据集
-│       ├── SVHN/         # SVHN数据集
-│       ├── SynthDigits/  # SynthDigits数据集
-│       └── USPS/         # USPS数据集
+│   ├── digit/            # 数字数据集（MNIST、MNIST_M、SVHN等）
+│   │   ├── MNIST/        # MNIST数据集
+│   │   ├── MNIST_M/      # MNIST-M数据集
+│   │   ├── SVHN/         # SVHN数据集
+│   │   ├── SynthDigits/  # SynthDigits数据集
+│   │   └── USPS/         # USPS数据集
+│   ├── office/           # 办公用品数据集（amazon、caltech、dslr、webcam）
+│   └── domain/           # 域适应数据集（需要下载）
 ├── models/               # 模型定义
 │   └── resnet.py         # ResNet10模型实现
 ├── utils/                # 工具函数
@@ -38,10 +40,7 @@ conda activate fedorthrus
 
 # 或使用venv创建虚拟环境
 python -m venv fedorthrus_venv
-# Windows激活
-fedorthrus_venv\Scripts\activate
-# Linux/Mac激活
-# source fedorthrus_venv/bin/activate
+
 ```
 
 ### 安装依赖
@@ -50,49 +49,34 @@ fedorthrus_venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## 数据集
+
+FedOrthrus在三个数据集上进行了实验：
+
+### Digit
+数字数据集（MNIST、MNIST-M、SVHN、SynthDigits、USPS）已包含在仓库。
+
+### Office
+办公用品数据集（amazon、caltech、dslr、webcam）已包含在仓库中。
+
+### Domain
+对于域适应数据集，请从以下链接下载：
+[域适应数据集](https://drive.google.com/file/d/1pj7pk73OYeGhYXp9Nptmpw8nSxUe4dEY/view?usp=sharing)
+
+下载后，将文件内容解压到 `data/domain/` 目录中。
+
 ## 使用方法
 
-### 基本运行命令
-
-```bash
-python main.py --dataset digit --num_clients 5 --rounds 50 --N 316
-```
-
-### 主要参数说明
-
-| 参数名 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `--device` | str | cuda | 运行设备（cpu或cuda） |
-| `--gpu` | int | 0 | GPU索引 |
-| `--seed` | int | 0 | 随机种子 |
-| `--dataset` | str | digit | 数据集类型（digit、office、domain） |
-| `--num_clients` | int | 5 | 客户端数量 |
-| `--rounds` | int | 50 | 训练轮数 |
-| `--N` | int | 316 | 聚合维度数 |
-| `--lr` | float | 0.01 | 学习率 |
-| `--local_bs` | int | 32 | 本地批次大小 |
-| `--train_ep` | int | 2 | 本地训练轮数 |
-| `--lamb` | float | 50 | CE损失权重参数 |
-| `--tau` | float | 0.07 | InfoNCE损失温度参数 |
-
-### 不同数据集的推荐参数
-
-| 数据集 | num_clients | rounds | N | lamb |
-|--------|-------------|--------|---|------|
-| digit | 5 | 50 | 316 | 50 |
-| office | 4 | 80 | 192 | 10 |
-| domain | 6 | 200 | 192 | 1 |
-
-### 运行示例
+### 运行示例(参数设置与论文相同)
 
 ```bash
 # 在digit数据集上运行，5个客户端，50轮训练
-python main.py --dataset digit --num_clients 5 --rounds 50 --N 316 --lamb 50
+python main.py --dataset digit --num_clients 5 --rounds 50 --lamb 50
 
 # 在office数据集上运行，4个客户端，80轮训练
-python main.py --dataset office --num_clients 4 --rounds 80 --N 192 --lamb 10
+python main.py --dataset office --num_clients 4 --rounds 80 --lamb 10
 
 # 在domain数据集上运行，6个客户端，200轮训练
-python main.py --dataset domain --num_clients 6 --rounds 200 --N 192 --lamb 1
+python main.py --dataset domain --num_clients 6 --rounds 200 --lamb 1 --n_per_class 30
 ```
 
