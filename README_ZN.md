@@ -54,10 +54,16 @@ pip install -r requirements.txt
 FedOrthrus在三个数据集上进行了实验：
 
 ### Digit
-数字数据集（MNIST、MNIST-M、SVHN、SynthDigits、USPS）已包含在仓库。
+数字数据集（MNIST、MNIST-M、SVHN、SynthDigits、USPS）可从以下链接下载：
+[数字数据集](https://drive.google.com/drive/folders/1gWrTqBhsuhi6DeP6s9POUg3-ZBf7YMaO?usp=sharing)
+
+下载后，将文件内容解压到 `data/digit/` 目录中。
 
 ### Office
-办公用品数据集（amazon、caltech、dslr、webcam）已包含在仓库中。
+办公用品数据集（amazon、caltech、dslr、webcam）可从以下链接下载：
+[办公用品数据集](https://drive.google.com/drive/folders/1OKFcnBL-ijq9-IlB9H2-NMStEDSXU98f?usp=sharing)
+
+下载后，将文件内容解压到 `data/office/` 目录中。
 
 ### Domain
 对于域适应数据集，请从以下链接下载：
@@ -65,7 +71,15 @@ FedOrthrus在三个数据集上进行了实验：
 
 下载后，将文件内容解压到 `data/domain/` 目录中。
 
+**注意：** 所有数据集应按照上述项目结构放置在根目录的data文件夹中。
+
 ## 使用方法
+
+### 快速开始
+您可以直接运行main文件，使用默认设置开始digit实验：
+```bash
+python main.py
+```
 
 ### 运行示例(参数设置与论文相同)
 
@@ -79,4 +93,10 @@ python main.py --dataset office --num_clients 4 --rounds 80 --lamb 10
 # 在domain数据集上运行，6个客户端，200轮训练
 python main.py --dataset domain --num_clients 6 --rounds 200 --lamb 1 --n_per_class 30
 ```
+
+### 性能说明
+在配备RTX 4090的设备上：
+- digit数据集实验：大约4分钟
+- office数据集实验：大约15分钟
+- domain数据集实验：大约35分钟
 

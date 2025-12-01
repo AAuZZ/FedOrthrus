@@ -1,8 +1,5 @@
 # Two Heads Are Better Than One: Generalized Cross-Domain Federated Learning via Dual-Prototype
 
-## Project Overview
-
-FedOrthrus is a federated learning framework that addresses cross-domain challenges through dual-prototype architecture. It enables effective model training across different data distributions while maintaining privacy and reducing communication overhead.
 
 ## Project Structure
 
@@ -60,10 +57,16 @@ pip install -r requirements.txt
 FedOrthrus has been evaluated on three datasets:
 
 ### Digit
-Digit datasets (MNIST, MNIST-M, SVHN, SynthDigits, USPS) are included in the repository.
+Digit datasets (MNIST, MNIST-M, SVHN, SynthDigits, USPS) can be downloaded from:
+[Digit Datasets](https://drive.google.com/drive/folders/1gWrTqBhsuhi6DeP6s9POUg3-ZBf7YMaO?usp=sharing)
+
+After downloading, extract the contents to the `data/digit/` directory.
 
 ### Office
-Office datasets (amazon, caltech, dslr, webcam) are included in the repository.
+Office datasets (amazon, caltech, dslr, webcam) can be downloaded from:
+[Office Datasets](https://drive.google.com/drive/folders/1OKFcnBL-ijq9-IlB9H2-NMStEDSXU98f?usp=sharing)
+
+After downloading, extract the contents to the `data/office/` directory.
 
 ### Domain
 For the domain adaptation datasets, please download from the following link:
@@ -71,7 +74,15 @@ For the domain adaptation datasets, please download from the following link:
 
 After downloading, extract the contents to the `data/domain/` directory.
 
+**Note:** All datasets should be placed in the `data/` folder according to the project structure shown above.
+
 ## Usage
+
+### Quick Start
+You can directly run the main file to start the digit experiment with default settings:
+```bash
+python main.py
+```
 
 ### Basic Running Commands
 
@@ -85,6 +96,12 @@ python main.py --dataset office --num_clients 4 --rounds 80 --lamb 10
 # Run on domain dataset with 6 clients and 200 rounds
 python main.py --dataset domain --num_clients 6 --rounds 200 --lamb 1 --n_per_class 30
 ```
+
+### Performance Notes
+On a device with RTX 4090:
+- Digit dataset experiment: approximately 4 minutes
+- Office dataset experiment: approximately 15 minutes
+- Domain dataset experiment: approximately 35 minutes
 
 
 
