@@ -43,7 +43,7 @@ def proposed(args, train_dataset_list, test_dataset_list, user_groups, user_grou
             local_cluster_protos_N_M = {}
             global_collected_protos = {}
 
-        print(f'\n | Global Training Round : {rd} | N value: {N} |\n')
+        print(f'\n | Global Training Round : {rd}')
         local_weights, local_loss1, local_loss2, local_loss_total, = [], [], [], []
         for idx in range(args.num_clients):
             local_model = train_update(args=args, dataset=train_dataset_list[idx % len(train_dataset_list)], idxs=user_groups[idx])

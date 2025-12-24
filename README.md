@@ -98,13 +98,13 @@ python main.py
 
 ```bash
 # Experiment 1 (Table 1): Digit dataset
-python main.py --dataset digit --num_clients 5 --rounds 50 --lamb 50
+python main.py --dataset digit --num_clients 5 --rounds 50 --lamb 50 --num_exps 5
 
 # Experiment 2 (Table 2): Office dataset
-python main.py --dataset office --num_clients 4 --rounds 80 --lamb 10
+python main.py --dataset office --num_clients 4 --rounds 80 --lamb 10 --num_exps 5
 
 # Experiment 3 (Table 6): Domain dataset
-python main.py --dataset domain --num_clients 6 --rounds 200 --lamb 1 --n_per_class 30
+python main.py --dataset domain --num_clients 6 --rounds 200 --lamb 1 --n_per_class 30 --num_exps 5
 ```
 
 ### Performance Notes
