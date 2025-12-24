@@ -6,46 +6,27 @@
 
 ```
 FedOrthrus/
-├── data/                 # 数据集目录
-│   ├── digit/            # 数字数据集（MNIST、MNIST_M、SVHN等）
-│   │   ├── MNIST/        # MNIST数据集
-│   │   ├── MNIST_M/      # MNIST-M数据集
-│   │   ├── SVHN/         # SVHN数据集
-│   │   ├── SynthDigits/  # SynthDigits数据集
-│   │   └── USPS/         # USPS数据集
-│   ├── office/           # 办公用品数据集（amazon、caltech、dslr、webcam）
-│   └── domain/           # 域适应数据集（需要下载）
-├── models/               # 模型定义
-│   └── resnet.py         # ResNet10模型实现
-├── utils/                # 工具函数
-│   ├── options.py        # 命令行参数配置
-│   ├── update.py         # 本地训练和测试实现
-│   ├── util.py           # 原型聚合、聚类等工具函数
-│   ├── data_util.py      # 数据准备和预处理
-│   ├── dataset.py        # 数据集处理工具
-│   └── finch.py          # FINCH聚类算法实现
-├── main.py               # 项目主入口
-├── acc.npy               # 实验结果存储文件
-└── LICENSE               # 许可证文件
+├── data/
+│   ├── digit/
+│   ├── office/
+│   └── domain/
+├── models/
+├── utils/
+├── main.py
+├── requirements.txt
+└── README.md
 ```
 
 ## 环境配置
 
-### 创建虚拟环境
-
 ```bash
-# 使用conda创建虚拟环境
+# 1. 创建conda环境
 conda create -n fedorthrus python=3.9 -y
+
+# 2. 激活环境
 conda activate fedorthrus
 
-# 或使用venv创建虚拟环境
-python -m venv fedorthrus_venv
-
-```
-
-### 安装依赖
-
-```bash
+# 3. 安装依赖
 pip install -r requirements.txt
 ```
 
@@ -57,40 +38,73 @@ FedOrthrus在三个数据集上进行了实验：
 数字数据集（MNIST、MNIST-M、SVHN、SynthDigits、USPS）可从以下链接下载：
 [数字数据集](https://drive.google.com/drive/folders/1gWrTqBhsuhi6DeP6s9POUg3-ZBf7YMaO?usp=sharing)
 
-下载后，将文件内容解压到 `data/digit/` 目录中。
+下载后，将文件内容解压到 `FedOrthrus/data/digit/` 目录中。预期的目录结构为：
+```
+FedOrthrus/data/digit/
+├── MNIST/
+├── MNIST_M/
+├── SVHN/
+├── SynthDigits/
+└── USPS/
+```
 
 ### Office
 办公用品数据集（amazon、caltech、dslr、webcam）可从以下链接下载：
 [办公用品数据集](https://drive.google.com/drive/folders/1OKFcnBL-ijq9-IlB9H2-NMStEDSXU98f?usp=sharing)
 
-下载后，将文件内容解压到 `data/office/` 目录中。
+下载后，将文件内容解压到 `FedOrthrus/data/office/` 目录中。预期的目录结构为：
+```
+FedOrthrus/data/office/
+├── amazon/
+├── caltech/
+├── caltech_manual/
+├── dslr/
+├── webcam/
+├── amazon_train.pkl
+├── amazon_test.pkl
+├── caltech_train.pkl
+├── ...
+```
 
 ### Domain
 对于域适应数据集，请从以下链接下载：
 [域适应数据集](https://drive.google.com/file/d/1pj7pk73OYeGhYXp9Nptmpw8nSxUe4dEY/view?usp=sharing)
 
-下载后，将文件内容解压到 `data/domain/` 目录中。
+下载后，将文件内容解压到 `FedOrthrus/data/domain/` 目录中。预期的目录结构为：
+```
+FedOrthrus/data/domain/
+├── clipart/
+├── infograph/
+├── painting/
+├── quickdraw/
+├── real/
+├── sketch/
+├── clipart_test.pkl
+├── clipart_train.pkl
+├── infograph_test.pkl
+├── ...
+```
 
-**注意：** 所有数据集应按照上述项目结构放置在根目录的data文件夹中。
+**注意：** 所有数据集应按照上述项目结构放置在根目录的FedOrthrus/data文件夹中。
 
 ## 使用方法
 
-### 快速开始
-您可以直接运行main文件，使用默认设置开始digit实验：
+### 快速开始（实验一）
+这是最小可复现示例，对应论文的**表一**：
 ```bash
 python main.py
 ```
 
-### 运行示例(参数设置与论文相同)
+### 完整运行命令
 
 ```bash
-# 在digit数据集上运行，5个客户端，50轮训练
+# 实验一（表一）：Digit数据集
 python main.py --dataset digit --num_clients 5 --rounds 50 --lamb 50
 
-# 在office数据集上运行，4个客户端，80轮训练
+# 实验二（表二）：Office数据集
 python main.py --dataset office --num_clients 4 --rounds 80 --lamb 10
 
-# 在domain数据集上运行，6个客户端，200轮训练
+# 实验三（表六）：Domain数据集
 python main.py --dataset domain --num_clients 6 --rounds 200 --lamb 1 --n_per_class 30
 ```
 
